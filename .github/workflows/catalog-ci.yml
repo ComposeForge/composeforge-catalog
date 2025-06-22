@@ -30,6 +30,10 @@ jobs:
       - name: Compose up
         run: docker compose -f pkg/docker-compose.yml --env-file pkg/.env up -d
 
+      # -- copy the env so the health-check can source it --
+      - name: Prepare env for health-check
+        run: cp pkg/.env .env
+
       - name: Healthcheck
         run: |
           chmod +x templates/nextcloud/healthcheck.sh
@@ -40,5 +44,5 @@ jobs:
       # ------- clean up ------------------------------------
       - name: Compose down
         if: always()
-        run: docker compose -f pkg/docker-compose.yml --env-file pkg/.env down -v
+        run: docker compose -f pkg/docker-compose.yml --env-file pkg/.env down -v  && rm .env
 
