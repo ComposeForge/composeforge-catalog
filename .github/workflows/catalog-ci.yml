@@ -1,7 +1,9 @@
 name: catalog-ci
 on:
   push:    { paths: ['templates/**', '.env.sample', 'tools/**'] }
-  pull_request:
+  workflow_dispatch:
+  # disabled for pull_request for now
+  # pull_request:
 
 jobs:
   nextcloud:
