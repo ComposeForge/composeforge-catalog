@@ -22,12 +22,14 @@ jobs:
         uses: container-tools/kind-action@v2
       - name: Launch stack inside KinD
         run: |
-          docker exec kind-control-plane bash -c \
-            "mkdir /stack && cp -r pkg/* /stack/ && \
-             cd /stack && docker compose up -d"
+            docker cp pkg kind-control-plane:/stack
+            docker exec kind-control-plane bash -c \
+              "cd /stack && docker compose up -d"
+
       - name: Healthcheck
         run: pkg/templates/nextcloud/healthcheck.sh
         env: { NEXTCLOUD_PORT: 8081 }
       - name: Clean
         run: kind delete cluster
+
 
