@@ -2,7 +2,7 @@
 """
 render.py  –  ComposeForge catalog renderer
 Usage:
-    python tools/render.py nextcloud \
+    python3 tools/render.py nextcloud \
            --out-dir /tmp/pkg \
            --port 8081
 """

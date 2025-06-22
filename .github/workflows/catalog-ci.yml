@@ -15,7 +15,7 @@ jobs:
       - run: pip install jinja2 pyyaml
 
       - name: Render package
-        run: python tools/render.py nextcloud --out-dir pkg --port 8081
+        run: python3 tools/render.py nextcloud --out-dir pkg --port 8081
 
       # ----- optional: KinD smoke test -----
       - name: Start KinD
