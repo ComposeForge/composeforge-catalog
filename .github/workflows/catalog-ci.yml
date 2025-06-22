@@ -1,0 +1,33 @@
+name: catalog-ci
+on:
+  push:    { paths: ['templates/**', '.env.sample', 'tools/**'] }
+  pull_request:
+
+jobs:
+  nextcloud:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Python deps
+        uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - run: pip install jinja2 pyyaml
+
+      - name: Render package
+        run: python tools/render.py nextcloud --out-dir pkg --port 8081
+
+      # ----- optional: KinD smoke test -----
+      - name: Start KinD
+        uses: container-tools/kind-action@v2
+      - name: Launch stack inside KinD
+        run: |
+          docker exec kind-control-plane bash -c \
+            "mkdir /stack && cp -r pkg/* /stack/ && \
+             cd /stack && docker compose up -d"
+      - name: Healthcheck
+        run: pkg/templates/nextcloud/healthcheck.sh
+        env: { NEXTCLOUD_PORT: 8081 }
+      - name: Clean
+        run: kind delete cluster
+
