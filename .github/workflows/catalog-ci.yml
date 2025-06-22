@@ -1,37 +1,44 @@
 name: catalog-ci
 on:
-  push:    { paths: ['templates/**', '.env.sample', 'tools/**'] }
+  push:
+    paths:
+      - 'templates/**'
+      - '.env.sample'
+      - 'tools/**'
+      - '.github/workflows/**'
   workflow_dispatch:
-  # disabled for pull_request for now
-  # pull_request:
 
 jobs:
   nextcloud:
     runs-on: ubuntu-latest
+    env:
+      COMPOSE_PROJECT_NAME: cf_test      # avoid name clashes on the runner
+      NEXTCLOUD_PORT: 8081               # port used in .env.sample
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Python deps
+      - name: Set up Python
         uses: actions/setup-python@v5
         with: { python-version: '3.12' }
       - run: pip install jinja2 pyyaml
 
+      # ------- render template into ./pkg ------------------
       - name: Render package
-        run: python3 tools/render.py nextcloud --out-dir pkg --port 8081
+        run: python3 tools/render.py nextcloud --out-dir pkg --port $NEXTCLOUD_PORT
 
-      # ----- optional: KinD smoke test -----
-      - name: Start KinD
-        uses: container-tools/kind-action@v2
-      - name: Launch stack inside KinD
-        run: |
-            docker cp pkg kind-control-plane:/stack
-            docker exec kind-control-plane bash -c \
-              "cd /stack && docker compose up -d"
+      # ------- bring the stack up on the runner -----------
+      - name: Compose up
+        run: docker compose -f pkg/docker-compose.yml --env-file pkg/.env up -d
 
       - name: Healthcheck
-        run: pkg/templates/nextcloud/healthcheck.sh
-        env: { NEXTCLOUD_PORT: 8081 }
-      - name: Clean
-        run: kind delete cluster
+        run: |
+          chmod +x templates/nextcloud/healthcheck.sh
+          templates/nextcloud/healthcheck.sh
+        env:
+          NEXTCLOUD_PORT: ${{ env.NEXTCLOUD_PORT }}
 
+      # ------- clean up ------------------------------------
+      - name: Compose down
+        if: always()
+        run: docker compose -f pkg/docker-compose.yml --env-file pkg/.env down -v
 
