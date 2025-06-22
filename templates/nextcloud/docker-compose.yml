@@ -1,6 +1,6 @@
 services:
   nextcloud-app:
-    image: nextcloud:28-fpm
+    image: nextcloud:28-apache
     container_name: nextcloud-app
     restart: unless-stopped
     ports:
